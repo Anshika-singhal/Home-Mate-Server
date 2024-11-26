@@ -58,7 +58,7 @@ const app = express();
 const corsOptions = {
     origin: (origin, callback) => {
         console.log(`CORS origin check: ${origin}`);
-        const allowedOrigins = ["https://home-mate-beta.vercel.app/", "http://127.0.0.1:5500"];
+        const allowedOrigins = ["https://home-mate-w83w.onrender.com", "http://127.0.0.1:5500"];
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
@@ -87,16 +87,9 @@ app.use('/api/resetPassword', controller.resetPassword);
 
 // MongoDB Connection
 const mongourl = process.env.DATABASE_URL;
-mongoose.connect(mongourl, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true,
-    serverSelectionTimeoutMS: 5000,
-}).then(() => {
-    console.log('MongoDB connected');
-}).catch(err => {
-    console.error('MongoDB connection error:', err);
-});
+mongoose.connect(mongourl)
+    .then(() => console.log('MongoDB connected'))
+    .catch(err => console.log(err));
 
 // Debug Incoming Requests
 app.use((req, res, next) => {
