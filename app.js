@@ -86,23 +86,10 @@ app.use('/api/forgotPassword', controller.forgotPassword);
 app.use('/api/resetPassword', controller.resetPassword);
 
 // MongoDB Connection
-const mongourl = process.env.DATABASE_URL;
+const mongourl = process.env.database;
 mongoose.connect(mongourl)
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.log(err));
-
-// Debug Incoming Requests
-app.use((req, res, next) => {
-    console.log(`Incoming Request - Origin: ${req.headers.origin}, Method: ${req.method}`);
-    console.log('Headers:', req.headers);
-    next();
-});
-
-// Error Handling Middleware
-app.use((err, req, res, next) => {
-    console.error('Error:', err.stack);
-    res.status(500).send('Something went wrong!');
-});
 
 // Start Server
 const PORT = process.env.PORT || 5000;
