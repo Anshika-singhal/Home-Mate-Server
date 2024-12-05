@@ -79,7 +79,6 @@ categoryRouter.delete('/v1/user/:userId/category', userAuth, async (req, res) =>
         const result = await Category.deleteMany({ userId: req.user._id });
         res.status(200).json(result);
 
-
     } catch (err) {
         res.status(500).json({ message: "Server error", error: err.message })
     }
@@ -114,10 +113,12 @@ categoryRouter.delete('/v1/user/:userId/category/:id', userAuth, async (req, res
             return res.status(403).json({ message: "Unauthorized access to this user's categories" });
         }
 
-        const match = await Category.findOneAndDelete({ _id: id, userId: req.user._id });
+        const match = await Category.findOne({ _id: id, userId: req.user._id });
         if (!match) {
             return res.status(404).json({ message: "Category not found or doesn't belong to the user!!!" });
         }
+        match.DeleteAt=new Date();
+        await match.save();
         res.status(200).json({
             message: "Category Deleted Successfully!!!",
             data: match

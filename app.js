@@ -58,7 +58,7 @@ const app = express();
 const corsOptions = {
     origin: (origin, callback) => {
         console.log(`CORS origin check: ${origin}`);
-        const allowedOrigins = ["https://home-mate-w83w.onrender.com", "http://127.0.0.1:5500"];
+        const allowedOrigins = ["https://home-mate-w83w.onrender.com", "http://127.0.0.1:5500","http://localhost:5000"];
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
@@ -74,6 +74,11 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions)); // Ensure preflight requests are handled
 
+// app.use(cors({
+//         origin: ["http://127.0.0.1:5500", "http://localhost:5000"],
+//         credentials:true
+//     }));
+    
 // Middleware
 app.use(bodyParser.json());
 app.use(cookieParser());

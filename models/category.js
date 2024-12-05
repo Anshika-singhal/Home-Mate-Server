@@ -34,6 +34,10 @@ const ItemSchema = new mongoose.Schema({
         type: Date, // This needs to be required in creation logic
         required: true
     },
+    DeleteAt: {
+        type: Date,
+        default:null
+    },
     ItemMaintainance: [
         ItemMaintainance
     ]
@@ -53,6 +57,10 @@ const CategorySchema = new mongoose.Schema({
     CreatedAt: {
         type: Date,
         default: Date.now
+    },
+    DeleteAt: {
+        type: Date,
+        default:null
     },
     items: [
         ItemSchema
