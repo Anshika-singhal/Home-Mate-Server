@@ -311,6 +311,9 @@ categoryRouter.delete('/v1/user/:userId/category/:categoryId/item/:itemId', user
             return res.status(404).json({ message: "Item not found in this category!" });
         }
 
+        if(itemIndex.DeleteAt){
+            return res.status(404).json({ message: "Item is already deleted!" });
+        }
         itemIndex.DeleteAt=new Date();
         // Save the updated category
         await category.save();
