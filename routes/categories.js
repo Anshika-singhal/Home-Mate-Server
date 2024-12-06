@@ -53,20 +53,27 @@ categoryRouter.post('/v1/admin/user/:userId/category', userAuth, async (req, res
 
 categoryRouter.get('/v1/user/:userId/category', userAuth, async (req, res) => {
     const { userId } = req.params;
+
     try {
         // Ensure the authenticated user's ID matches the provided userId
         if (!req.user || req.user._id.toString() !== userId) {
             return res.status(403).json({ message: "Unauthorized access: User ID does not match the authenticated user." });
         }
 
-        // Find all categories associated with the authenticated user
-        const categories = await Category.find({ userId: req.user._id });
+        // Find all non-deleted categories associated with the authenticated user
+        const categories = await Category.find({
+            userId: req.user._id,
+            isDeleted: { $ne: true } // Exclude categories where isDeleted is true
+        });
+
+        // Respond with the filtered categories
         res.status(200).json(categories);
     } catch (err) {
         console.error("Error retrieving categories:", err);
         res.status(500).json({ message: "Server error", error: err.message });
     }
 });
+
 
 categoryRouter.delete('/v1/user/:userId/category', userAuth, async (req, res) => {
     const { userId } = req.params;
@@ -222,6 +229,7 @@ categoryRouter.put('/v1/user/:userId/category/:categoryId/item/:itemId', userAut
 
 categoryRouter.get('/v1/user/:userId/category/:categoryId/item', userAuth, async (req, res) => {
     const { userId, categoryId } = req.params;
+
     try {
         // Ensure the authenticated user's ID matches the provided userId
         if (!req.user || req.user._id.toString() !== userId) {
@@ -234,8 +242,11 @@ categoryRouter.get('/v1/user/:userId/category/:categoryId/item', userAuth, async
             return res.status(404).json({ message: "Category not found!" });
         }
 
-        // Respond with the items in the category
-        res.status(200).json({ message: "Category found successfully", items: category.items });
+        // Filter out deleted items
+        const activeItems = category.items.filter(item => !item.isDeleted);
+
+        // Respond with non-deleted items
+        res.status(200).json({ message: "Category found successfully", items: activeItems });
 
     } catch (err) {
         console.error("Error fetching items:", err); // Log the error for debugging
