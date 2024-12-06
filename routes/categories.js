@@ -312,16 +312,21 @@ categoryRouter.delete('/v1/user/:userId/category/:categoryId/item/:itemId', user
             return res.status(404).json({ message: "Category not found!" });
         }
 
-        // Find the index of the item within the category's items array
-        const itemIndex = category.items.findIndex(item => item._id.toString() === itemId);
-        if (itemIndex === -1) {
+        // Find the item within the category's items array
+        const item = category.items.find(item => item._id.toString() === itemId);
+        if (!item) {
             return res.status(404).json({ message: "Item not found in this category!" });
         }
 
-        if(itemIndex.DeleteAt){
-            return res.status(404).json({ message: "Item is already deleted!" });
+        // Check if the item is already deleted
+        if (item.isDeleted) {
+            return res.status(400).json({ message: "Item is already deleted!" });
         }
-        itemIndex.DeleteAt=new Date();
+
+        // Soft delete the item
+        item.isDeleted = true;
+        item.DeleteAt = new Date();
+
         // Save the updated category
         await category.save();
 
