@@ -62,6 +62,10 @@ const CategorySchema = new mongoose.Schema({
         type: Date,
         default:null
     },
+    isDeleted: {
+        type: Boolean,
+        default: false,
+    },
     items: [
         ItemSchema
     ]

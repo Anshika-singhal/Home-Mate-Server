@@ -107,25 +107,32 @@ categoryRouter.get('/v1/user/:userId/category/:id', userAuth, async (req, res) =
 
 categoryRouter.delete('/v1/user/:userId/category/:id', userAuth, async (req, res) => {
     const { userId, id } = req.params;
+
     try {
         // Ensure the user in params matches the authenticated user
         if (userId !== req.user._id.toString()) {
             return res.status(403).json({ message: "Unauthorized access to this user's categories" });
         }
 
+        // Find the category for the authenticated user
         const match = await Category.findOne({ _id: id, userId: req.user._id });
+
         if (!match) {
             return res.status(404).json({ message: "Category not found or doesn't belong to the user!!!" });
         }
-        match.DeleteAt=new Date();
+
+        // Mark the category as deleted
+        match.isDeleted = true;
+        match.DeleteAt = new Date();
         await match.save();
+
         res.status(200).json({
             message: "Category Deleted Successfully!!!",
             data: match
         });
 
     } catch (err) {
-        res.status(500).json({ message: "Server error", error: err.message })
+        res.status(500).json({ message: "Server error", error: err.message });
     }
 });
 
