@@ -6,47 +6,130 @@ const { userAuth } = require('../authentication/middleWares/auth');
 
 //categorry api building
 
+// categoryRouter.post('/v1/admin/user/:userId/category', userAuth, async (req, res) => {
+//     const { userId } = req.params;
+//     let { name } = req.body;
+
+//     // Validate the category name
+//     if (typeof name !== 'string' || name.trim() === '') {
+//         return res.status(400).json({ message: 'Category name is required and must be a valid string.' });
+//     }
+
+//     // Normalize the name
+//     name = name.toLowerCase().trim().replace(/\s+/g, ' ');
+
+//     // Validate the name for allowed characters
+//     const isValidName = /^[a-zA-Z0-9 ]+$/.test(name);
+//     if (!isValidName) {
+//         return res.status(400).json({ message: 'Invalid category name! Only alphanumeric characters and single spaces are allowed.' });
+//     }
+
+//     try {
+//         // Ensure the authenticated user's ID matches the provided userId
+//         if (!req.user || req.user._id.toString() !== userId) {
+//             return res.status(403).json({ message: "Unauthorized access: User ID does not match the authenticated user." });
+//         }
+
+//         // Check if the category name already exists for the user
+//         const existingCategory = await Category.findOne({ userId: req.user._id, name });
+//         if (existingCategory) {
+//             return res.status(400).json({ message: "Category name already exists for this user." });
+//         }
+
+//         // Create and save the new category
+//         const category = new Category({
+//             name,
+//             userId: req.user._id // Assign userId from authenticated user
+//         });
+
+//         await category.save();
+//         res.status(201).json({ message: "Category created successfully!", category });
+//     } catch (err) {
+//         // Log error for debugging
+//         console.error("Error saving category:", err);
+//         res.status(500).json({ message: "Server error", error: err.message });
+//     }
+// });
+
 categoryRouter.post('/v1/admin/user/:userId/category', userAuth, async (req, res) => {
     const { userId } = req.params;
     let { name } = req.body;
 
-    // Validate the category name
+    // Validate category name
     if (typeof name !== 'string' || name.trim() === '') {
         return res.status(400).json({ message: 'Category name is required and must be a valid string.' });
     }
 
-    // Normalize the name
+    // Normalize and validate the name
     name = name.toLowerCase().trim().replace(/\s+/g, ' ');
 
-    // Validate the name for allowed characters
     const isValidName = /^[a-zA-Z0-9 ]+$/.test(name);
     if (!isValidName) {
         return res.status(400).json({ message: 'Invalid category name! Only alphanumeric characters and single spaces are allowed.' });
     }
 
     try {
+        // Ensure authenticated user ID matches provided user ID
+        if (!req.user || req.user._id.toString() !== userId) {
+            return res.status(403).json({ message: "Unauthorized access: User ID does not match the authenticated user." });
+        }
+
+        // Check if a soft-deleted category with the same name exists
+        const existingCategory = await Category.findOne({ userId: req.user._id, name, isDeleted: true });
+        if (existingCategory) {
+            return res.status(200).json({
+                message: "A deleted category with this name exists. Do you want to recover it?",
+                category: existingCategory
+            });
+        }
+
+        // Check if a non-deleted category already exists
+        const existingNonDeletedCategory = await Category.findOne({ userId: req.user._id, name, isDeleted: false });
+        if (existingNonDeletedCategory) {
+            return res.status(400).json({ message: "Category name already exists for this user." });
+        }
+
+        // Create and save a new category
+        const category = new Category({ name, userId: req.user._id });
+        await category.save();
+        res.status(201).json({ message: "Category created successfully!", category });
+    } catch (err) {
+        console.error("Error saving category:", err);
+        res.status(500).json({ message: "Server error", error: err.message });
+    }
+});
+
+categoryRouter.patch('/v1/user/:userId/category/:categoryId/recover', userAuth, async (req, res) => {
+    const { userId, categoryId } = req.params;
+    try {
         // Ensure the authenticated user's ID matches the provided userId
         if (!req.user || req.user._id.toString() !== userId) {
             return res.status(403).json({ message: "Unauthorized access: User ID does not match the authenticated user." });
         }
 
-        // Check if the category name already exists for the user
-        const existingCategory = await Category.findOne({ userId: req.user._id, name });
-        if (existingCategory) {
-            return res.status(400).json({ message: "Category name already exists for this user." });
-        }
-
-        // Create and save the new category
-        const category = new Category({
-            name,
-            userId: req.user._id // Assign userId from authenticated user
+        const recovered = await Category.findOneAndUpdate({
+            _id: categoryId,
+            userId: req.user._id,
+            isDeleted: { $ne: false },//ne refers to not equal to
+            DeleteAt: { $ne: null }
+        }, {
+            $set: {
+                DeleteAt: null,
+                isDeleted: false
+            }
+        }, {
+            new: true
         });
 
-        await category.save();
-        res.status(201).json({ message: "Category created successfully!", category });
-    } catch (err) {
-        // Log error for debugging
-        console.error("Error saving category:", err);
+        if (!recovered) {
+            return res.status(404).json({ message: "Category not found or doesn't belong to the user!" });
+        }
+
+        // Return the recovered category
+        res.status(200).json({ message: "Category recovered successfully!", category: recovered });
+    }
+    catch (err) {
+        console.error("Error retrieving category:", err);
         res.status(500).json({ message: "Server error", error: err.message });
     }
 });
@@ -161,6 +244,8 @@ categoryRouter.post('/v1/user/:userId/category/:id/item', userAuth, async (req, 
     if (isNaN(serviceDateUTC.getTime())) {
         return res.status(400).json({ message: "Invalid service date format" });
     }
+
+    name: name.toLowerCase();
 
     try {
         // Ensure the authenticated user's ID matches the provided userId
@@ -392,6 +477,60 @@ categoryRouter.patch('/v1/user/:userId/category/:categoryId/item/:itemId', userA
     } catch (error) {
         console.error("Server error:", error);
         return res.status(500).json({ message: "Server error", error: error.message });
+    }
+});
+
+categoryRouter.patch('/v1/user/:userId/category/:categoryId/item/:itemId/recover', userAuth, async (req, res) => {
+    const { userId, categoryId, itemId } = req.params;
+
+    try {
+        // Ensure the authenticated user's ID matches the provided userId
+        if (!req.user || req.user._id.toString() !== userId) {
+            return res.status(403).json({ message: "Unauthorized access: User ID does not match the authenticated user." });
+        }
+
+        // Use findOneAndUpdate with dot notation to target the specific item in the array
+        const updatedCategory = await Category.findOneAndUpdate(
+            {
+                _id: categoryId,
+                userId: req.user._id,
+                "items._id": itemId, // Match the specific item by its ID
+                "items.isDeleted": true, // Ensure the item is marked as deleted
+                "items.DeleteAt": { $ne: null } // Ensure the item has a deleted timestamp
+            },
+            {
+                $set: {
+                    "items.$.isDeleted": false, // Restore the isDeleted field
+                    "items.$.DeleteAt": null // Clear the deletedAt timestamp
+                }
+            },
+            { new: true } // Return the updated document
+        );
+
+        console.log("Input userId:", userId);
+        console.log("Input categoryId:", categoryId);
+        console.log("Input itemId:", itemId);
+
+        console.log("Query: ", {
+            _id: categoryId,
+            userId: req.user._id,
+            "items._id": itemId,
+            "items.isDeleted": true,
+            "items.DeleteAt": { $ne: null }
+        });
+
+        if (!updatedCategory) {
+            return res.status(404).json({ message: "Item not found or not eligible for recovery" });
+        }
+
+        // Extract the updated item for the response
+        const recoveredItem = updatedCategory.items.find(item => item._id.toString() === itemId);
+
+        res.status(200).json({ message: "Item recovered successfully!", item: recoveredItem });
+
+    } catch (err) {
+        console.error("Error recovering item:", err);
+        res.status(500).json({ message: "Server error", error: err.message });
     }
 });
 

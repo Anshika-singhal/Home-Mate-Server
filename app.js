@@ -70,6 +70,7 @@ const corsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true, // Allow cookies or tokens
 };
+corsOptions.credentials = true;  // Ensures cookies are included in requests
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions)); // Ensure preflight requests are handled
