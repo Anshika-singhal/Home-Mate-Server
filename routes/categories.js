@@ -56,25 +56,25 @@ categoryRouter.post('/v1/admin/user/:userId/category', userAuth, async (req, res
     let { name } = req.body;
 
     // Validate category name
-    if (typeof name !== 'string' || name.trim() === '') {
-        return res.status(400).json({ message: 'Category name is required and must be a valid string.' });
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+        return res.status(400).json({ message: "Category name is required and must be a valid string." });
     }
 
     // Normalize and validate the name
     name = name.toLowerCase().trim().replace(/\s+/g, ' ');
-
     const isValidName = /^[a-zA-Z0-9 ]+$/.test(name);
+
     if (!isValidName) {
-        return res.status(400).json({ message: 'Invalid category name! Only alphanumeric characters and single spaces are allowed.' });
+        return res.status(400).json({ message: "Invalid category name! Only alphanumeric characters and single spaces are allowed." });
     }
 
     try {
-        // Ensure authenticated user ID matches provided user ID
+        // Ensure the authenticated user's ID matches the provided userId
         if (!req.user || req.user._id.toString() !== userId) {
             return res.status(403).json({ message: "Unauthorized access: User ID does not match the authenticated user." });
         }
 
-        // Check if a soft-deleted category with the same name exists
+        // Check for a soft-deleted category with the same name
         const existingCategory = await Category.findOne({ userId: req.user._id, name, isDeleted: true });
         if (existingCategory) {
             return res.status(200).json({
@@ -84,18 +84,19 @@ categoryRouter.post('/v1/admin/user/:userId/category', userAuth, async (req, res
             });
         }
 
-        // Check if a non-deleted category already exists
-        const existingNonDeletedCategory = await Category.findOne({ userId: req.user._id, name, isDeleted: false });
-        if (existingNonDeletedCategory) {
+        // Check for an active category with the same name
+        const activeCategory = await Category.findOne({ userId: req.user._id, name, isDeleted: false });
+        if (activeCategory) {
             return res.status(400).json({ message: "Category name already exists for this user." });
         }
 
-        // Create and save a new category
-        const category = new Category({ name, userId: req.user._id });
-        await category.save();
-        res.status(201).json({ message: "Category created successfully!", category });
+        // Create a new category
+        const newCategory = new Category({ name, userId: req.user._id });
+        await newCategory.save();
+
+        res.status(201).json({ message: "Category created successfully!", category: newCategory });
     } catch (err) {
-        console.error("Error saving category:", err);
+        console.error("Error creating category:", err);
         res.status(500).json({ message: "Server error", error: err.message });
     }
 });
