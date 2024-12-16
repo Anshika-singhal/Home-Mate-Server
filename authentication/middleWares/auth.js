@@ -16,7 +16,7 @@ const userAuth = async (req, res, next) => {
         }
 
         // Verify token
-        const decodeObject = jwt.verify(token, 'shhh');
+        const decodeObject = jwt.decode(token, 'shhh');
         console.log('Decoded Token:', decodeObject); // Debugging log
 
         const { _id } = decodeObject;
