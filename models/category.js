@@ -76,6 +76,6 @@ const CategorySchema = new mongoose.Schema({
 });
 
 // Add a compound index to enforce unique category names per user
-CategorySchema.index({ userId: 1, name: 1 }, { unique: true });
+CategorySchema.index({ userId: 1, name: 1 }, { unique: true,partialFilterExpression:{DeleteAt:null} });
 
 module.exports = mongoose.model('category', CategorySchema);
