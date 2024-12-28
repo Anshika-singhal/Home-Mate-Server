@@ -164,7 +164,7 @@ categoryRouter.patch('/v1/user/:userId/category/:categoryId/recover', userAuth, 
         const recovered = await Category.findOneAndUpdate({
             _id: categoryId,
             userId: req.user._id,
-            isDeleted: true,//ne refers to not equal to
+            isDeleted: { $ne: false },//ne refers to not equal to
             DeleteAt: { $ne: null }
         }, {
             $set: {
@@ -184,7 +184,7 @@ categoryRouter.patch('/v1/user/:userId/category/:categoryId/recover', userAuth, 
     }
     catch (err) {
         console.error("Error retrieving category:", err);
-        res.status(500).json({ message: "Server error", error: err.message });
+        res.status(500).json({ message: "Server error while recovering the category", error: err.message });
     }
 });
 
