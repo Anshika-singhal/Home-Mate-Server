@@ -157,6 +157,9 @@ categoryRouter.patch('/v1/user/:userId/category/:categoryId/recover', userAuth, 
         if (!req.user || req.user._id.toString() !== userId) {
             return res.status(403).json({ message: "Unauthorized access: User ID does not match the authenticated user." });
         }
+        if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+            return res.status(400).json({ message: "Invalid category ID format." });
+        }
 
         const recovered = await Category.findOneAndUpdate({
             _id: categoryId,
