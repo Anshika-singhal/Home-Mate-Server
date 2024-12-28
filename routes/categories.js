@@ -161,7 +161,7 @@ categoryRouter.patch('/v1/user/:userId/category/:categoryId/recover', userAuth, 
         const recovered = await Category.findOneAndUpdate({
             _id: categoryId,
             userId: req.user._id,
-            isDeleted: { $ne: false },//ne refers to not equal to
+            isDeleted: true,//ne refers to not equal to
             DeleteAt: { $ne: null }
         }, {
             $set: {
