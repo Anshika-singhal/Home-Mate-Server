@@ -129,7 +129,7 @@ categoryRouter.post('/v1/admin/user/:userId/category', userAuth, async (req, res
            { return res.status(200).json({
                 message: "A deleted category with this name exists. Do you want to recover it?",
                 category: existingCategory,
-                option:"recovery"
+                // option:"recovery"
             });}
             return res.status(409).json({message:"Categoy name already exist for same user "})
         }
