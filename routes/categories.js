@@ -1,6 +1,6 @@
 //module.exports=Router;
 const express = require('express');
-const mongoose = require('mongoose');
+// const mongoose = require('mongoose');
 const categoryRouter = express.Router();
 const Category = require('../models/category');
 const { userAuth } = require('../authentication/middleWares/auth');
