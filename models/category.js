@@ -50,7 +50,8 @@ const ItemSchema = new mongoose.Schema({
 const CategorySchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true
+        required: true,
+        unique:true
     },
     userId: {
         type: mongoose.Schema.Types.ObjectId, // Reference to the user model

@@ -124,25 +124,20 @@ categoryRouter.post('/v1/admin/user/:userId/category', userAuth, async (req, res
         }
 
         // Check if a soft-deleted category with the same name exists
-        const existingCategory = await Category.findOne({ userId: req.user._id, name});
-        if (existingCategory ) {
-            if(existingCategory.isDeleted){
-                existingCategory.isDeleted=false;
-                existingCategory.DeleteAt=null;
-                await existingCategory.save();
-           { return res.status(200).json({
-                message: "A deleted category with this name exists. Do you want to recover it?",
-                category: existingCategory,
-                // option:"recovery"
-            });
-        }}
-        else{
-            return res.status(409).json({message:"Categoy name already exist for same user "});
-        }
+        const existingCategory = await Category.findOne({ userId: req.user._id, name });
+        if (existingCategory) {
+            if (existingCategory.DeleteAt) {
+                return res.status(200).json({
+                    message: "A deleted category with this name exists. Do you want to recover it?",
+                    category: existingCategory,
+                    // option:"recovery"
+                });
+            }
+            return res.status(409).json({ message: "Categoy name already exist for same user " });
         }
 
         // Create and save a new category
-        const category = new Category({ name, userId: req.user._id,DeleteAt:null });
+        const category = new Category({ name, userId: req.user._id, DeleteAt: null });
         await category.save();
         res.status(201).json({ message: "Category created successfully!", category });
     } catch (err) {
